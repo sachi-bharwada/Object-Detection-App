@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
         if (bitmap != null) {
             var image = InputImage.fromBitmap(bitmap, 0)
             objectDetector.process(image).addOnSuccessListener { objects ->
-                bitmap?.apply {
+                bitmap.apply {
                     writeLabelsAndDrawRectangles(objects, labeler, text)
                 }
 
@@ -103,8 +103,8 @@ class MainActivity : AppCompatActivity() {
 
     fun Bitmap.writeLabelsAndDrawRectangles(objects:List<DetectedObject>, labeler: ImageLabeler, text:TextView):Bitmap? {
         val imageView : ImageView = findViewById(R.id.imageView)
-        var myBitmap = copy(config, true)
-        val canvas = Canvas(myBitmap)
+        var myBitmap = config?.let { copy(it, true) }
+        val canvas = myBitmap?.let { Canvas(it) }
         var outputText = ""
         var objIndx = 0
         for (obj in objects) {
@@ -123,21 +123,25 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             else if (Gate == "Yes") {
-                val croppedBitmap = Bitmap.createBitmap(
-                    myBitmap,
-                    boundingBox.left,
-                    boundingBox.top,
-                    boundingBox.width(),boundingBox.height(),
-                )
-                val img = InputImage.fromBitmap(croppedBitmap, 0)
+                val croppedBitmap = myBitmap?.let {
+                    Bitmap.createBitmap(
+                        it,
+                        boundingBox.left,
+                        boundingBox.top,
+                        boundingBox.width(),boundingBox.height(),
+                    )
+                }
+                val img = croppedBitmap?.let { InputImage.fromBitmap(it, 0) }
 
-                labeler.process(img).addOnSuccessListener {labels ->
-                    Index += 1
-                    if (labels.count() > 0){
-                        outputText = text.text.toString()
-                        outputText = outputText + Index + "-->" + labels[0].text.toString() + ":" + labels[0].confidence.toString() + "\n"
-                        text.text = outputText
-                        text.alpha = 0.8f
+                if (img != null) {
+                    labeler.process(img).addOnSuccessListener {labels ->
+                        Index += 1
+                        if (labels.count() > 0){
+                            outputText = text.text.toString()
+                            outputText = outputText + Index + "-->" + labels[0].text.toString() + ":" + labels[0].confidence.toString() + "\n"
+                            text.text = outputText
+                            text.alpha = 0.8f
+                        }
                     }
                 }
 
@@ -151,12 +155,16 @@ class MainActivity : AppCompatActivity() {
                 textSize = 32.0f
                 strokeWidth = 4.0f
                 isAntiAlias = true
-                canvas.drawRect(boundingBox, this)
-                canvas.drawText(
-                    objLabel.toString(),
-                    boundingBox.left.toFloat(),
-                    boundingBox.top.toFloat(), this
-                )
+                if (canvas != null) {
+                    canvas.drawRect(boundingBox, this)
+                }
+                if (canvas != null) {
+                    canvas.drawText(
+                        objLabel.toString(),
+                        boundingBox.left.toFloat(),
+                        boundingBox.top.toFloat(), this
+                    )
+                }
             }
 
         }
